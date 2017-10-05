@@ -22,14 +22,17 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"log"
+	"log/syslog"
 	"strings"
 	"bytes"
 	"syscall"
+	"path"
 
 	"github.com/spf13/cobra"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 )
 
 // curlCmd represents the curl command
@@ -61,24 +64,32 @@ func init() {
 }
 
 func runCurl(cmd *cobra.Command, args []string) {
-	fmt.Println("Hello World")
-	spew.Dump(args)
+
+	// Setup the logger
+	var syslogTag = path.Base(os.Args[0])
+	sysLog, err := syslog.Dial("unixgram", "/dev/log", syslog.LOG_WARNING|syslog.LOG_DAEMON, syslogTag)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	execCmd := exec.Command("/usr/bin/curl", args[0:]...)
 	var buffStdout bytes.Buffer
 	var buffStderr bytes.Buffer
 	execCmd.Stdout = &buffStdout
-    execCmd.Stderr = &buffStderr
-    if err := execCmd.Start(); err != nil {
-		log.Fatalf("execCmd.Start: %v")
+	execCmd.Stderr = &buffStderr
+	if err := execCmd.Start(); err != nil {
+		fmt.Fprintf(sysLog, "execCmd.Start: %v")
+		return
 	}
 
-	err := execCmd.Wait()
+	err = execCmd.Wait()
 
 	if len(buffStderr.Bytes()) > 0 {
-		log.Println("==> Error: ", strings.TrimSpace(buffStderr.String()))
+		fmt.Fprintf(sysLog, "Error: ", strings.TrimSpace(buffStderr.String()))
 	}
-	log.Println("==> Output: ", strings.TrimSpace(buffStdout.String()))
+	if len(buffStdout.Bytes()) > 0 {
+		fmt.Fprintf(sysLog, "Info: ", strings.TrimSpace(buffStdout.String()))
+	}
 
 	if err != nil {
 
@@ -90,10 +101,14 @@ func runCurl(cmd *cobra.Command, args []string) {
 			// defined for both Unix and Windows and in both cases has
 			// an ExitStatus() method with the same signature.
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-				log.Printf("Exit Status: %d", status.ExitStatus())
+				fmt.Fprintf(sysLog, "Exit Status: %d", status.ExitStatus())
+				fmt.Println("Exit Status: %d", status.ExitStatus())
+				fmt.Println("Err: ", strings.TrimSpace(buffStderr.String()))
+				fmt.Println("Std: ", strings.TrimSpace(buffStdout.String()))
 			}
 		} else {
-			log.Fatalf("execCmd.Wait: %v", err)
+			fmt.Fprintf(sysLog, "execCmd.Wait: %v", err)
+			return
 		}
 	}
 }

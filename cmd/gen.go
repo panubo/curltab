@@ -27,9 +27,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"log"
 
 	"github.com/spf13/cobra"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/mattn/go-shellwords"
 )
 
@@ -45,7 +46,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: HelloWorld,
 }
-var wrapper string
+var (
+	wrapper string
+	envFile string
+)
 
 func init() {
 	RootCmd.AddCommand(genCmd)
@@ -60,11 +64,10 @@ func init() {
 	// is called directly, e.g.:
 	// genCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	genCmd.Flags().StringVarP(&wrapper, "wrapper", "w", fmt.Sprintf("%s curl --", os.Args[0]), "Overwrite default curl wrapper")
+	genCmd.Flags().StringVarP(&envFile, "env-file", "e", "", "Extra env file to import")
 }
 
 func HelloWorld(cmd *cobra.Command, args []string) {
-	fmt.Println("Hello World!")
-
 	reader := bufio.NewReader(os.Stdin)
 	line := 1
 	envMatch, _ := regexp.Compile(`^[A-Z][A-Z0-9_]+=`)
@@ -78,31 +81,29 @@ func HelloWorld(cmd *cobra.Command, args []string) {
 		}
 
 		if envMatch.MatchString(input) == true {
-			fmt.Printf("ENV ")
+			log.Printf("ENV  %2d: %s", line, input)
 			envs = append(envs, input)
 		} else if cronMatch.MatchString(input) == true {
-			fmt.Printf("CRON ")
+			log.Printf("CRON %2d: %s", line, input)
 			args, _ := shellwords.Parse(input)
 			crons = append(crons, args)
 		}
-
-		fmt.Printf("%2d: %s", line, input)
 		line++
 	}
-
-	spew.Dump(envs)
-	// spew.Dump(crons)
 
 	for _, item := range crons {
 		// spew.Dump(item)
 		for _, time := range item[0:5] {
 			fmt.Printf("%s ", time)
 		}
+		if envFile != "" {
+			fmt.Printf(". %s; ", envFile)
+		}
 		for _, env := range envs {
 			results := strings.SplitN(strings.TrimSpace(env), "=", 2)
-			fmt.Printf("%s=\"%s\" ", results[0], results[1])
+			fmt.Printf("%s=\"%s\"; ", results[0], results[1])
 		}
-		fmt.Printf("; %s ", wrapper)
+		fmt.Printf("%s ", wrapper)
 		for _, arg := range item[5:] {
 			fmt.Printf("\"%s\" ", strings.Replace(arg, "\"", "\\\"", -1))
 		}
