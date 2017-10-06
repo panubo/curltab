@@ -13,7 +13,7 @@ This function takes a curltab (a crontab like format) generates a normal crontab
 
 If you don't want to use the curl wrapper function you can add `--wrapper "curl"` to the gen command.
 
-### Example
+### Example usage
 
 ```
 ./curltab gen < curltab.txt
@@ -23,9 +23,7 @@ If you don't want to use the curl wrapper function you can add `--wrapper "curl"
 
 This function wraps `curl`. It has two main uses.
 
-Logs all output to log file.
-
-Generates output if curl exits non-zero so cron will send an email.
+Logs all output to syslog and if curl exits non-zero it will output to stdout causing cron to send an email to the admin.
 
 ## Environment variables
 
@@ -33,14 +31,26 @@ Environment variables may be specified at the top of the curltab. Environment va
 
 `TZ=` is a special environment variable. (Example: `TZ=Australia/Sydney`)
 
-## Example curltab
+## Curltab format
+
+The curltab format is very similar to the crontab format, in fact the only difference is the 6th field where a crontab would normally have the command to be run. In the curltab format the 6th field and the rest of the line should only contain curl arguments. (Note: the command `curl` should not be specified in the curltab).
 
 ```
-TZ=Australia/Sydney
-HOST_URL=https://api.internal:8080
+<environment variable>
+<minute> <hour> <day of month> <month> <day of week> <curl arguments>...
+```
 
-0 0 * * * --connect-timeout 2 --fail -XPOST -d '{"msg": "Hello World"}' ${HOST_URL}/api/internal
-0 /8 * * * --connect-timeout 2 --fail -XPOST -d '{"msg": "Hello World"}' ${HOST_URL}/api/internal
+### Example curltab
+
+```
+HOST=http://google.com
+0 * * * * -sS --connect-timeout 5 --fail --max-time 20 -XGET ${HOST}
+```
+
+The above is the equivalent for running the below curl command hourly
+
+```
+curl -sS --connect-timeout 5 --fail --max-time 20 -XGET http://google.com
 ```
 
 ## Recommended curl options
