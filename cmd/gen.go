@@ -44,7 +44,7 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: HelloWorld,
+	Run: runGen,
 }
 var (
 	wrapper string
@@ -67,7 +67,7 @@ func init() {
 	genCmd.Flags().StringVarP(&envFile, "env-file", "e", "", "Extra env file to import")
 }
 
-func HelloWorld(cmd *cobra.Command, args []string) {
+func runGen(cmd *cobra.Command, args []string) {
 	reader := bufio.NewReader(os.Stdin)
 	line := 1
 	envMatch, _ := regexp.Compile(`^[A-Z][A-Z0-9_]+=`)
