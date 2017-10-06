@@ -7,9 +7,9 @@ NAME    = curltab
 # TODO: Add tests
 # IDEA: possibly set VERSION = $(shell git describe --abbrev=1 --tags --always)
 
-build = GOOS=$(1) GOARCH=$(2) $(GO) build $(BUILDFLAGS) -ldflags="-X main.VERSION=$(VERSION)" -o build/$(NAME)-$(VERSION)-$(1)-$(2) main.go
-tar   = cd build && tar -zcvf $(NAME)-$(VERSION)-$(1)-$(2).tar.gz $(NAME)-$(VERSION)-$(1)-$(2) && rm $(NAME)-$(VERSION)-$(1)-$(2)
-zip   = cd build && zip $(NAME)-$(VERSION)-$(1)-$(2).zip $(NAME)-$(VERSION)-$(1)-$(2) && rm $(NAME)-$(VERSION)-$(1)-$(2)
+build = GOOS=$(1) GOARCH=$(2) $(GO) build $(BUILDFLAGS) -ldflags="-X main.VERSION=$(VERSION)" -o build/$(VERSION)-$(1)-$(2)/$(NAME) main.go
+tar   = cd build/$(VERSION)-$(1)-$(2) && tar -zcvf ../$(NAME)-$(VERSION)-$(1)-$(2).tar.gz $(NAME) && cd .. && rm -rf $(VERSION)-$(1)-$(2)
+zip   = cd build/$(VERSION)-$(1)-$(2) && zip ../$(NAME)-$(VERSION)-$(1)-$(2).zip $(NAME) && cd .. && rm -rf $(VERSION)-$(1)-$(2)
 
 .PHONY: all linux darwin clean dev-build
 all: linux darwin
